@@ -2,6 +2,8 @@ abstract class AuthState {}
 
 class AuthInitial extends AuthState {}
 
+class NewUserState extends AuthState {}
+
 class AuthLoading extends AuthState {}
 
 class OtpSentState extends AuthState {

@@ -10,6 +10,7 @@ class LoginScreen extends StatelessWidget {
 
   final TextEditingController phoneController = TextEditingController();
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,33 +35,35 @@ class LoginScreen extends StatelessWidget {
         builder: (context, state) {
           return Padding(
             padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: "Phone Number (+91...)",
+            child: Center(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: const InputDecoration(
+                      labelText: "Phone Number (+91...)",
+                    ),
                   ),
-                ),
-                const SizedBox(height: 20),
-                if (state is AuthLoading)
-                  const CircularProgressIndicator()
-                else
-                  ElevatedButton(
-                    onPressed: () {
-                      String input = phoneController.text.trim();
-
-                      if (input.startsWith("+")) {
-                        context.read<AuthBloc>().add(SendOtpEvent(input));
-                      } else {
-                        context.read<AuthBloc>().add(SendOtpEvent("+91$input"));
-                      }
-                    },
-
-                    child: const Text("Send OTP"),
-                  ),
-              ],
+                  const SizedBox(height: 20),
+                  if (state is AuthLoading)
+                    const CircularProgressIndicator()
+                  else
+                    ElevatedButton(
+                      onPressed: () {
+                        String input = phoneController.text.trim();
+              
+                        if (input.startsWith("+")) {
+                          context.read<AuthBloc>().add(SendOtpEvent(input));
+                        } else {
+                          context.read<AuthBloc>().add(SendOtpEvent("+91$input"));
+                        }
+                      },
+              
+                      child: const Text("Send OTP"),
+                    ),
+                ],
+              ),
             ),
           );
         },

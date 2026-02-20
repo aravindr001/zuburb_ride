@@ -46,7 +46,7 @@ class AuthRepository {
 
 
 
-  Future<void> signInWithOtp(
+  Future<bool> signInWithOtp(
   String verificationId,
   String smsCode,
 ) async {
@@ -60,14 +60,22 @@ class AuthRepository {
 
   final user = userCredential.user;
 
-  if (user != null) {
-    await FirebaseFirestore.instance
-        .collection("customers")
-        .doc(user.uid)
-        .set({
-      "phone": user.phoneNumber,
-      "createdAt": FieldValue.serverTimestamp(),
-    });
+  if (user == null) {
+    throw Exception("User is null after sign in");
+  }
+
+  final docRef = FirebaseFirestore.instance
+      .collection("customers")
+      .doc(user.uid);
+
+  final docSnapshot = await docRef.get();
+
+  if (docSnapshot.exists) {
+    // Existing user
+    return false;
+  } else {
+    // New user → DO NOT create document yet
+    return true;
   }
 }
 

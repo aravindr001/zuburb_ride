@@ -4,6 +4,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:zuburb_ride/bloc/auth/auth_bloc.dart';
 import 'package:zuburb_ride/presentation/screens/auth_wrapper.dart';
 import 'package:zuburb_ride/presentation/screens/customer_home_screen.dart';
+import 'package:zuburb_ride/presentation/screens/profile_screen.dart';
 import 'package:zuburb_ride/repository/auth_repository.dart';
 
 void main() async {
@@ -27,7 +28,10 @@ class MyApp extends StatelessWidget {
       title: 'Flutter Demo',
       theme: ThemeData(colorScheme: .fromSeed(seedColor: Colors.deepPurple)),
       home: const AuthWrapper(),
-      routes: {"/home": (context) => const CustomerHomeScreen()},
+      routes: {
+        "/home": (context) => const CustomerHomeScreen(),
+        "/profile": (context) => const ProfileScreen(),
+      },
     );
   }
 }

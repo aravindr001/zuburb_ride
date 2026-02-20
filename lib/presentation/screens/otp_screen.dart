@@ -17,11 +17,12 @@ class OtpScreen extends StatelessWidget {
       appBar: AppBar(title: const Text("Enter OTP")),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
-          // if (state is AuthSuccess) {
-          //   Navigator.pushNamedAndRemoveUntil(context, "/home", (route) => false);
-          // }
           if (state is AuthSuccess) {
             Navigator.pop(context);
+          }
+
+          if (state is NewUserState) {
+            Navigator.pushReplacementNamed(context, "/profile");
           }
 
           if (state is AuthError) {

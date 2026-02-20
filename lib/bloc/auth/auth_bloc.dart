@@ -3,6 +3,8 @@ import '../../repository/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
 
+
+
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository authRepository;
 
@@ -31,12 +33,16 @@ if (verificationId == "AUTO_VERIFIED") {
   emit(AuthLoading());
 
   try {
-    await authRepository.signInWithOtp(
+    final isNewUser = await authRepository.signInWithOtp(
       event.verificationId,
       event.smsCode,
     );
 
-    emit(AuthSuccess());
+    if (isNewUser) {
+      emit(NewUserState());
+    } else {
+      emit(AuthSuccess());
+    }
   } catch (e) {
     emit(AuthError(e.toString()));
   }
