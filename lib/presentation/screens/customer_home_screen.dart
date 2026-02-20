@@ -6,20 +6,25 @@ class CustomerHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    
+
+    var appBar = AppBar(title: const Text("Customer Home"),
+      actions: [TextButton(
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+              },
+              child: const Text("Logout"),
+            )]);
+
+            
     return Scaffold(
-      appBar: AppBar(title: const Text("Customer Home")),
+      appBar: appBar,
       body: Center(
         child: Column(
           children: [
             Text(
               "Customer Logged In Successfully",
               style: TextStyle(fontSize: 18),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                await FirebaseAuth.instance.signOut();
-              },
-              child: const Text("Logout"),
             ),
           ],
         ),
