@@ -68,6 +68,95 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     await _fetchNearbyRiders(position.latitude, position.longitude);
   }
 
+  // =====================
+  // ===BOOK RIDE NOW=====
+  // =====================
+
+Future<void> _bookRideNow() async {
+  if (_currentPosition == null) return;
+
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
+
+  final customerId = user.uid;
+
+  final bounds = getBounds(
+    _currentPosition!.latitude,
+    _currentPosition!.longitude,
+    10,
+  );
+
+  final snapshot = await FirebaseFirestore.instance
+      .collection('rider_locations')
+      .where('lat', isGreaterThan: bounds['minLat'])
+      .where('lat', isLessThan: bounds['maxLat'])
+      .where('lng', isGreaterThan: bounds['minLng'])
+      .where('lng', isLessThan: bounds['maxLng'])
+      .get();
+
+  for (var doc in snapshot.docs) {
+    final riderId = doc.id;
+
+    try {
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+
+        final riderRef =
+            FirebaseFirestore.instance.collection('riders').doc(riderId);
+
+        final riderSnapshot = await transaction.get(riderRef);
+
+        if (!riderSnapshot.exists) {
+          throw Exception("Rider does not exist");
+        }
+
+        final isOnline = riderSnapshot['isOnline'];
+        final isAvailable = riderSnapshot['isAvailable'];
+
+        if (isOnline != true || isAvailable != true) {
+          throw Exception("Rider not available");
+        }
+
+        // Create ride inside transaction
+        final rideRef =
+            FirebaseFirestore.instance.collection('rides').doc();
+
+        transaction.set(rideRef, {
+          "customerId": customerId,
+          "riderId": riderId,
+          "pickup": GeoPoint(
+            _currentPosition!.latitude,
+            _currentPosition!.longitude,
+          ),
+          "drop": null,
+          "status": "requested",
+          "createdAt": FieldValue.serverTimestamp(),
+        });
+
+        // Lock rider
+        transaction.update(riderRef, {
+          "isAvailable": false,
+          "currentRideId": rideRef.id,
+          "updatedAt": FieldValue.serverTimestamp(),
+        });
+
+        print("Ride created: ${rideRef.id}");
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Ride booked")),
+      );
+
+      return; // success → stop loop
+    } catch (e) {
+      // Rider was already taken → try next rider
+      continue;
+    }
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(content: Text("No riders available")),
+  );
+}
   // =============================
   // FETCH RIDERS + ADD MARKERS
   // =============================
@@ -132,7 +221,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Home"),
+        centerTitle: true,
+        title: const Text("ZUBURB RIDE",style: TextStyle(letterSpacing: 6),),
         actions: [
           TextButton(
             onPressed: () async {
@@ -171,9 +261,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       Expanded(
                         child:
                             ElevatedButton(
-                          onPressed: () {
-                            // TODO: Ride Now
-                          },
+                          onPressed: _bookRideNow,
                           child:
                               const Text(
                                   "Ride Now"),
