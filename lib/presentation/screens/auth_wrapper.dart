@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'customer_home_screen.dart';
+import 'package:zuburb_ride/presentation/screens/home_screen.dart';
 import 'login_screen.dart';
 
 class AuthWrapper extends StatelessWidget {
@@ -18,7 +18,8 @@ class AuthWrapper extends StatelessWidget {
         }
 
         if (snapshot.hasData) {
-          return const CustomerHomeScreen();
+          // return const CustomerHomeScreen();
+          return const HomeScreen();
         }
 
         return LoginScreen();
