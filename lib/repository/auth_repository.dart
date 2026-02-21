@@ -6,6 +6,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 class AuthRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
+  Future<void> signOut() async {
+    await _auth.signOut();
+  }
+
   Future<String> verifyPhoneNumber(String phoneNumber) {
   final completer = Completer<String>();
 
@@ -13,8 +17,7 @@ class AuthRepository {
     phoneNumber: phoneNumber,
 
     verificationCompleted: (credential) async {
-      final userCredential =
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      await FirebaseAuth.instance.signInWithCredential(credential);
 
       if (!completer.isCompleted) {
         completer.complete("AUTO_VERIFIED");

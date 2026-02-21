@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:zuburb_ride/bloc/ride/finding_driver_cubit.dart';
+import 'package:zuburb_ride/bloc/ride/finding_driver_state.dart';
 
-class FindingDriverScreen extends StatefulWidget {
+class FindingDriverScreen extends StatelessWidget {
   final String rideId;
 
   const FindingDriverScreen({
@@ -10,96 +12,69 @@ class FindingDriverScreen extends StatefulWidget {
   });
 
   @override
-  State<FindingDriverScreen> createState() =>
-      _FindingDriverScreenState();
-}
-
-class _FindingDriverScreenState
-    extends State<FindingDriverScreen> {
-
-  late final Stream<DocumentSnapshot> _rideStream;
-
-  @override
-  void initState() {
-    super.initState();
-    _rideStream = FirebaseFirestore.instance
-        .collection('rides')
-        .doc(widget.rideId)
-        .snapshots();
-  }
-
-  void _cancelRide() async {
-    await FirebaseFirestore.instance
-        .collection('rides')
-        .doc(widget.rideId)
-        .update({
-      "status": "cancelled",
-    });
-
-    Navigator.popUntil(context, (route) => route.isFirst);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Finding Driver"),
-      ),
-      body: StreamBuilder<DocumentSnapshot>(
-        stream: _rideStream,
-        builder: (context, snapshot) {
+    return BlocConsumer<FindingDriverCubit, FindingDriverState>(
+      listener: (context, state) {
+        if (state is FindingDriverCancelled) {
+          Navigator.popUntil(context, (route) => route.isFirst);
+        }
 
-          if (!snapshot.hasData) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
-
-          final data =
-              snapshot.data!.data() as Map<String, dynamic>?;
-
-          if (data == null) {
-            return const Center(
-              child: Text("Ride not found"),
-            );
-          }
-
-          final status = data['status'];
-
-          if (status == "accepted") {
-            return const Center(
-              child: Text(
-                "Driver Accepted! 🚗",
-                style: TextStyle(fontSize: 22),
-              ),
-            );
-          }
-
-          if (status == "cancelled") {
-            return const Center(
-              child: Text("Ride Cancelled"),
-            );
-          }
-
-          return Center(
-            child: Column(
-              mainAxisAlignment:
-                  MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 20),
-                const Text(
-                  "Looking for nearby drivers...",
-                ),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  onPressed: _cancelRide,
-                  child: const Text("Cancel Ride"),
-                ),
-              ],
-            ),
+        if (state is FindingDriverFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(state.message)),
           );
-        },
+        }
+      },
+      builder: (context, state) {
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Finding Driver'),
+          ),
+          body: _buildBody(context, state),
+        );
+      },
+    );
+  }
+
+  Widget _buildBody(BuildContext context, FindingDriverState state) {
+    if (state is FindingDriverLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (state is FindingDriverNotFound) {
+      return const Center(child: Text('Ride not found'));
+    }
+
+    if (state is FindingDriverAccepted) {
+      return const Center(
+        child: Text(
+          'Driver Accepted! 🚗',
+          style: TextStyle(fontSize: 22),
+        ),
+      );
+    }
+
+    if (state is FindingDriverCancelled) {
+      return const Center(child: Text('Ride Cancelled'));
+    }
+
+    if (state is FindingDriverFailure) {
+      return Center(child: Text(state.message));
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const CircularProgressIndicator(),
+          const SizedBox(height: 20),
+          const Text('Looking for nearby drivers...'),
+          const SizedBox(height: 40),
+          ElevatedButton(
+            onPressed: () => context.read<FindingDriverCubit>().cancelRide(),
+            child: const Text('Cancel Ride'),
+          ),
+        ],
       ),
     );
   }
