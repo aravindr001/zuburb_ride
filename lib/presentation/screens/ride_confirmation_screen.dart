@@ -71,7 +71,8 @@ class RideConfirmationScreen extends StatelessWidget {
                 Text('${drop.latitude}, ${drop.longitude}'),
                 const SizedBox(height: 20),
                 Text(
-                  'Distance: ${state.distanceKm.toStringAsFixed(2)} km',
+                  'Distance: ${state.distanceKm.toStringAsFixed(2)} km'
+                  '${state.isRouteDistance ? ' (route)' : ' (straight-line)'}',
                   style: const TextStyle(fontSize: 18),
                 ),
                 const Spacer(),

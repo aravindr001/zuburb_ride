@@ -29,7 +29,28 @@ class FindingDriverCubit extends Cubit<FindingDriverState> {
 
         final status = data['status'];
         if (status == 'accepted') {
-          emit(const FindingDriverAccepted());
+          if (state is FindingDriverAccepted) return;
+
+          final riderId = data['riderId'];
+          final pickup = data['pickup'];
+
+          if (riderId is! String) {
+            emit(const FindingDriverFailure('Ride accepted but riderId missing'));
+            return;
+          }
+
+          if (pickup is! GeoPoint) {
+            emit(const FindingDriverFailure('Ride accepted but pickup missing'));
+            return;
+          }
+
+          emit(
+            FindingDriverAccepted(
+              riderId: riderId,
+              pickupLat: pickup.latitude,
+              pickupLng: pickup.longitude,
+            ),
+          );
         } else if (status == 'cancelled') {
           emit(const FindingDriverCancelled());
         } else {

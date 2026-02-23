@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:zuburb_ride/bloc/ride/finding_driver_cubit.dart';
 import 'package:zuburb_ride/bloc/ride/finding_driver_state.dart';
+import 'package:zuburb_ride/bloc/ride/driver_tracking_cubit.dart';
+import 'package:zuburb_ride/presentation/screens/driver_tracking_screen.dart';
 
 class FindingDriverScreen extends StatelessWidget {
   final String rideId;
@@ -15,6 +18,22 @@ class FindingDriverScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocConsumer<FindingDriverCubit, FindingDriverState>(
       listener: (context, state) {
+        if (state is FindingDriverAccepted) {
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (_) => BlocProvider(
+                create: (_) => DriverTrackingCubit(
+                  rideId: rideId,
+                  riderId: state.riderId,
+                  pickup: LatLng(state.pickupLat, state.pickupLng),
+                )..init(),
+                child: DriverTrackingScreen(rideId: rideId),
+              ),
+            ),
+          );
+        }
+
         if (state is FindingDriverCancelled) {
           Navigator.popUntil(context, (route) => route.isFirst);
         }
@@ -46,12 +65,7 @@ class FindingDriverScreen extends StatelessWidget {
     }
 
     if (state is FindingDriverAccepted) {
-      return const Center(
-        child: Text(
-          'Driver Accepted! 🚗',
-          style: TextStyle(fontSize: 22),
-        ),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (state is FindingDriverCancelled) {

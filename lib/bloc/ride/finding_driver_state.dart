@@ -11,7 +11,15 @@ final class FindingDriverSearching extends FindingDriverState {
 }
 
 final class FindingDriverAccepted extends FindingDriverState {
-  const FindingDriverAccepted();
+  final String riderId;
+  final double pickupLat;
+  final double pickupLng;
+
+  const FindingDriverAccepted({
+    required this.riderId,
+    required this.pickupLat,
+    required this.pickupLng,
+  });
 }
 
 final class FindingDriverCancelled extends FindingDriverState {
