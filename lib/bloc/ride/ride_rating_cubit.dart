@@ -36,6 +36,7 @@ class RideRatingCubit extends Cubit<RideRatingState> {
       final firestore = FirebaseFirestore.instance;
       final rideRef = firestore.collection('rides').doc(rideId);
       final riderRef = firestore.collection('riders').doc(riderId);
+      final customerRef = firestore.collection('customers').doc(uid);
 
       await firestore.runTransaction((tx) async {
         final rideSnap = await tx.get(rideRef);
@@ -56,6 +57,10 @@ class RideRatingCubit extends Cubit<RideRatingState> {
         }
 
         if (rideData['riderRating'] != null || rideData['riderRatedAt'] != null) {
+          final ratedBy = rideData['riderRatedBy'];
+          if (ratedBy == uid) {
+            return;
+          }
           throw Exception('Ride already rated');
         }
 
@@ -85,6 +90,15 @@ class RideRatingCubit extends Cubit<RideRatingState> {
           'riderRatedAt': FieldValue.serverTimestamp(),
           'riderRatedBy': uid,
         });
+
+        tx.set(
+          customerRef,
+          {
+            'currentRideId': null,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
       });
 
       emit(RideRatingSubmitted(rating: rating));

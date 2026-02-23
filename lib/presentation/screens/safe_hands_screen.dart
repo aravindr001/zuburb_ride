@@ -12,41 +12,44 @@ class SafeHandsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<DriverTrackingCubit, DriverTrackingState>(
-      listenWhen: (previous, current) => current is DriverTrackingRideCompleted,
-      listener: (context, state) {
-        final trackingCubit = context.read<DriverTrackingCubit>();
+    return PopScope(
+      canPop: false,
+      child: BlocListener<DriverTrackingCubit, DriverTrackingState>(
+        listenWhen: (previous, current) => current is DriverTrackingRideCompleted,
+        listener: (context, state) {
+          final trackingCubit = context.read<DriverTrackingCubit>();
 
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (_) => BlocProvider(
-              create: (_) => RideRatingCubit(
-                rideId: trackingCubit.rideId,
-                riderId: trackingCubit.riderId,
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(
+              builder: (_) => BlocProvider(
+                create: (_) => RideRatingCubit(
+                  rideId: trackingCubit.rideId,
+                  riderId: trackingCubit.riderId,
+                ),
+                child: const RateGuardScreen(),
               ),
-              child: const RateGuardScreen(),
             ),
-          ),
-          (route) => false,
-        );
-      },
-      child: const Scaffold(
-        body: Center(
-          child: Padding(
-            padding: EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'Our Guard will drop you to your desired location',
-                  textAlign: TextAlign.center,
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'You are in safe hands',
-                  textAlign: TextAlign.center,
-                ),
-              ],
+            (route) => false,
+          );
+        },
+        child: const Scaffold(
+          body: Center(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Our Guard will drop you to your desired location',
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'You are in safe hands',
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

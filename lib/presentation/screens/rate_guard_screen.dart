@@ -12,7 +12,11 @@ class RateGuardScreen extends StatelessWidget {
     return BlocConsumer<RideRatingCubit, RideRatingState>(
       listener: (context, state) {
         if (state is RideRatingSubmitted) {
-          Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
+          Navigator.of(context).pushNamedAndRemoveUntil(
+            '/home',
+            (route) => false,
+            arguments: const {'skipAutoResumeRide': true},
+          );
           return;
         }
 
@@ -28,7 +32,7 @@ class RateGuardScreen extends StatelessWidget {
         return Scaffold(
           appBar: AppBar(
             title: const Text('Rate Guard'),
-            automaticallyImplyLeading: !isSubmitting,
+            automaticallyImplyLeading: false,
           ),
           body: Padding(
             padding: const EdgeInsets.all(20),

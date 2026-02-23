@@ -42,6 +42,7 @@ dependencies:
   google_maps_flutter: ^2.14.2
   geolocator: ^14.0.2
   http: ^1.2.2
+  dart_geohash: ^2.1.0
 
 dev_dependencies:
   flutter_test:

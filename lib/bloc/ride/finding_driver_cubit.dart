@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import 'finding_driver_state.dart';
@@ -65,8 +66,50 @@ class FindingDriverCubit extends Cubit<FindingDriverState> {
 
   Future<void> cancelRide() async {
     try {
-      await FirebaseFirestore.instance.collection('rides').doc(rideId).update({
-        'status': 'cancelled',
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid == null) {
+        emit(const FindingDriverFailure('User not logged in'));
+        return;
+      }
+
+      final firestore = FirebaseFirestore.instance;
+      final rideRef = firestore.collection('rides').doc(rideId);
+      final customerRef = firestore.collection('customers').doc(uid);
+
+      await firestore.runTransaction((tx) async {
+        final rideSnap = await tx.get(rideRef);
+        final rideData = rideSnap.data();
+        if (rideData == null) {
+          throw Exception('Ride not found');
+        }
+
+        tx.update(rideRef, {
+          'status': 'cancelled',
+          'cancelledAt': FieldValue.serverTimestamp(),
+        });
+
+        final riderId = rideData['riderId'];
+        if (riderId is String && riderId.trim().isNotEmpty) {
+          final riderRef = firestore.collection('riders').doc(riderId);
+          tx.set(
+            riderRef,
+            {
+              'isAvailable': true,
+              'currentRideId': null,
+              'updatedAt': FieldValue.serverTimestamp(),
+            },
+            SetOptions(merge: true),
+          );
+        }
+
+        tx.set(
+          customerRef,
+          {
+            'currentRideId': null,
+            'updatedAt': FieldValue.serverTimestamp(),
+          },
+          SetOptions(merge: true),
+        );
       });
     } catch (e) {
       emit(FindingDriverFailure(e.toString()));

@@ -16,42 +16,46 @@ class FindingDriverScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<FindingDriverCubit, FindingDriverState>(
-      listener: (context, state) {
-        if (state is FindingDriverAccepted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BlocProvider(
-                create: (_) => DriverTrackingCubit(
-                  rideId: rideId,
-                  riderId: state.riderId,
-                  pickup: LatLng(state.pickupLat, state.pickupLng),
-                )..init(),
-                child: DriverTrackingScreen(rideId: rideId),
+    return PopScope(
+      canPop: false,
+      child: BlocConsumer<FindingDriverCubit, FindingDriverState>(
+        listener: (context, state) {
+          if (state is FindingDriverAccepted) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => BlocProvider(
+                  create: (_) => DriverTrackingCubit(
+                    rideId: rideId,
+                    riderId: state.riderId,
+                    pickup: LatLng(state.pickupLat, state.pickupLng),
+                  )..init(),
+                  child: DriverTrackingScreen(rideId: rideId),
+                ),
               ),
+            );
+          }
+
+          if (state is FindingDriverCancelled) {
+            Navigator.popUntil(context, (route) => route.isFirst);
+          }
+
+          if (state is FindingDriverFailure) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          return Scaffold(
+            appBar: AppBar(
+              automaticallyImplyLeading: false,
+              title: const Text('Finding Driver'),
             ),
+            body: _buildBody(context, state),
           );
-        }
-
-        if (state is FindingDriverCancelled) {
-          Navigator.popUntil(context, (route) => route.isFirst);
-        }
-
-        if (state is FindingDriverFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-        }
-      },
-      builder: (context, state) {
-        return Scaffold(
-          appBar: AppBar(
-            title: const Text('Finding Driver'),
-          ),
-          body: _buildBody(context, state),
-        );
-      },
+        },
+      ),
     );
   }
 

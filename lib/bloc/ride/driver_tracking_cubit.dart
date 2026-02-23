@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -269,6 +270,7 @@ class DriverTrackingCubit extends Cubit<DriverTrackingState> {
   }
 
   void _handleCancelled(String message) {
+    unawaited(_clearCustomerCurrentRideIdIfMatches());
     _riderLocationSub?.cancel();
     _rideSub?.cancel();
     emit(DriverTrackingCancelled(message));
@@ -280,10 +282,33 @@ class DriverTrackingCubit extends Cubit<DriverTrackingState> {
   }
 
   void _handleCompleted() {
+    unawaited(_clearCustomerCurrentRideIdIfMatches());
     unawaited(_incrementCustomerTotalRidesIfNeeded());
     _riderLocationSub?.cancel();
     _rideSub?.cancel();
     emit(const DriverTrackingRideCompleted());
+  }
+
+  Future<void> _clearCustomerCurrentRideIdIfMatches() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    final firestore = FirebaseFirestore.instance;
+    final customerRef = firestore.collection('customers').doc(uid);
+
+    await firestore.runTransaction((tx) async {
+      final customerSnap = await tx.get(customerRef);
+      final customerData = customerSnap.data();
+      if (customerData == null) return;
+
+      final currentRideId = customerData['currentRideId'];
+      if (currentRideId is! String || currentRideId != rideId) return;
+
+      tx.update(customerRef, {
+        'currentRideId': null,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+    });
   }
 
   Future<void> _incrementCustomerTotalRidesIfNeeded() async {
@@ -329,11 +354,38 @@ class DriverTrackingCubit extends Cubit<DriverTrackingState> {
       return LatLng(location.latitude, location.longitude);
     }
 
+    // Common pattern when using GeoFlutterFire / custom structs:
+    // { location: { geopoint: GeoPoint, geohash: "..." } }
+    if (location is Map) {
+      final maybeGeo = location['geopoint'] ?? location['geoPoint'] ?? location['geopoint'];
+      if (maybeGeo is GeoPoint) {
+        return LatLng(maybeGeo.latitude, maybeGeo.longitude);
+      }
+
+      final latAny = location['lat'] ?? location['latitude'];
+      final lngAny = location['lng'] ?? location['longitude'] ?? location['lon'];
+      if (latAny is num && lngAny is num) {
+        return LatLng(latAny.toDouble(), lngAny.toDouble());
+      }
+    }
+
+    // GeoFlutterFire also commonly stores { l: [lat, lng] }
+    final l = data['l'];
+    if (l is List && l.length >= 2 && l[0] is num && l[1] is num) {
+      return LatLng((l[0] as num).toDouble(), (l[1] as num).toDouble());
+    }
+
     final lat = data['lat'];
     final lng = data['lng'];
 
     if (lat is num && lng is num) {
       return LatLng(lat.toDouble(), lng.toDouble());
+    }
+
+    final latitude = data['latitude'];
+    final longitude = data['longitude'] ?? data['lon'];
+    if (latitude is num && longitude is num) {
+      return LatLng(latitude.toDouble(), longitude.toDouble());
     }
 
     return null;

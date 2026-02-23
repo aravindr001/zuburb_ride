@@ -88,8 +88,10 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<DriverTrackingCubit, DriverTrackingState>(
-      listener: (context, state) {
+    return PopScope(
+      canPop: false,
+      child: BlocConsumer<DriverTrackingCubit, DriverTrackingState>(
+        listener: (context, state) {
         if (state is DriverTrackingReady) {
           _fitCamera(state.rider, state.pickup);
 
@@ -122,13 +124,14 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
             SnackBar(content: Text(state.message)),
           );
         }
-      },
-      builder: (context, state) {
+        },
+        builder: (context, state) {
         final markers = state is DriverTrackingReady ? state.markers : <Marker>{};
         final initialTarget = state is DriverTrackingReady ? state.pickup : const LatLng(20.5937, 78.9629);
 
         return Scaffold(
           appBar: AppBar(
+            automaticallyImplyLeading: false,
             title: const Text('Driver Tracking'),
           ),
           body: Stack(
@@ -173,7 +176,8 @@ class _DriverTrackingScreenState extends State<DriverTrackingScreen> {
             ],
           ),
         );
-      },
+        },
+      ),
     );
   }
 }
