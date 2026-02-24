@@ -12,7 +12,7 @@ class RoutesApiConfig {
   static String? _cachedKey;
   static bool _attemptedNativeLookup = false;
 
-  static Future<String?> resolveApiKey() async {
+  static Future<String?> getApiKey() async {
     if (_cachedKey != null && _cachedKey!.trim().isNotEmpty) return _cachedKey;
 
     final fromDefine = _mapsApiKey.trim().isNotEmpty ? _mapsApiKey : _routesApiKey;
@@ -35,4 +35,6 @@ class RoutesApiConfig {
       return null;
     }
   }
+
+  static Future<String?> resolveApiKey() => getApiKey();
 }

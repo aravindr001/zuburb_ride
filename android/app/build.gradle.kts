@@ -1,3 +1,11 @@
+import java.util.Properties
+
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.inputStream().use { localProperties.load(it) }
+}
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,6 +13,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
+val mapsApiKey: String =
+    localProperties.getProperty("MAPS_API_KEY")
+        ?: (project.findProperty("MAPS_API_KEY") as String?)
+        ?: ""
 
 android {
     namespace = "com.zuburb.ride"
@@ -31,11 +44,7 @@ android {
         versionCode = flutter.versionCode
         versionName = flutter.versionName
 
-        val mapsApiKey: String? =
-            project.findProperty("MAPS_API_KEY") as String?
-
-        manifestPlaceholders["MAPS_API_KEY"] =
-            mapsApiKey ?: "AIzaSyB6b5C_h8-hUkHhlDVyPuY-5fchrFeefzE"
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {

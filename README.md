@@ -47,13 +47,15 @@ flutter pub get
 
 2. Firebase setup:
 
-- Ensure `android/app/google-services.json` is valid for your Firebase project.
+- Ensure `android/app/google-services.json` is valid for your Firebase project (kept locally, not committed).
 - Ensure iOS Firebase config file is added if building for iOS.
 
 3. Google Maps / API keys:
 
-- Android: key is read via Gradle property `MAPS_API_KEY` (fallback currently exists in app Gradle config).
-- Recommended run command:
+- The Google Maps API key is not stored in this repository.
+- Android: add `MAPS_API_KEY=AIzaSy...` in `android/local.properties`.
+- iOS: add `MAPS_API_KEY=AIzaSy...` in `ios/Flutter/Keys.xcconfig`.
+- You can also pass inline at run time:
 
 ```bash
 flutter run --dart-define=MAPS_API_KEY=YOUR_KEY

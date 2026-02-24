@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local secrets / API keys
+/android/local.properties
+/android/app/google-services.json
+/ios/Flutter/Keys.xcconfig
