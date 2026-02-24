@@ -28,7 +28,7 @@ Customer-facing Flutter app for booking on-demand and scheduled rides.
 - `lib/presentation/screens/` — App screens/UI
 - `lib/repository/` — Data access and API clients
 - `lib/utils/` — Utility helpers (distance, geohash, etc.)
-- `android/`, `ios/`, `web/`, `macos/`, `linux/`, `windows/` — platform targets
+- `android/` — platform targets
 
 ## Prerequisites
 
@@ -48,13 +48,12 @@ flutter pub get
 2. Firebase setup:
 
 - Ensure `android/app/google-services.json` is valid for your Firebase project (kept locally, not committed).
-- Ensure iOS Firebase config file is added if building for iOS.
+
 
 3. Google Maps / API keys:
 
 - The Google Maps API key is not stored in this repository.
 - Android: add `MAPS_API_KEY=AIzaSy...` in `android/local.properties`.
-- iOS: add `MAPS_API_KEY=AIzaSy...` in `ios/Flutter/Keys.xcconfig`.
 - You can also pass inline at run time:
 
 ```bash
