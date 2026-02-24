@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:zuburb_ride/bloc/auth/auth_status_cubit.dart';
 import 'package:zuburb_ride/bloc/location/select_location_cubit.dart';
 import 'package:zuburb_ride/bloc/ride/customer_ride_session_cubit.dart';
@@ -8,12 +9,16 @@ import 'package:zuburb_ride/bloc/ride/driver_tracking_cubit.dart';
 import 'package:zuburb_ride/bloc/ride/finding_driver_cubit.dart';
 import 'package:zuburb_ride/bloc/ride/ride_confirmation_cubit.dart';
 import 'package:zuburb_ride/bloc/ride/ride_rating_cubit.dart';
+import 'package:zuburb_ride/bloc/ride/scheduled_rides_cubit.dart';
+import 'package:zuburb_ride/bloc/ride/scheduled_rides_state.dart';
+import 'package:zuburb_ride/repository/ride_repository.dart';
 import 'select_location_screen.dart';
 import 'driver_tracking_screen.dart';
 import 'finding_driver_screen.dart';
 import 'safe_hands_screen.dart';
 import 'rate_guard_screen.dart';
 import 'ride_confirmation_screen.dart';
+import 'scheduled_rides_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -25,18 +30,27 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   String? _lastNavigationKey;
   late final CustomerRideSessionCubit _sessionCubit;
+  late final ScheduledRidesCubit _scheduledRidesCubit;
   bool _didReadRouteArgs = false;
   bool _skipAutoResumeRideOnce = false;
+  String? _lastScheduledActivationRideId;
 
   @override
   void initState() {
     super.initState();
     _sessionCubit = CustomerRideSessionCubit()..init();
+
+    final customerId = FirebaseAuth.instance.currentUser?.uid ?? '';
+    _scheduledRidesCubit = ScheduledRidesCubit(
+      rideRepository: context.read<RideRepository>(),
+      customerId: customerId,
+    )..init();
   }
 
   @override
   void dispose() {
     _sessionCubit.close();
+    _scheduledRidesCubit.close();
     super.dispose();
   }
 
@@ -122,30 +136,120 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  void _navigateForScheduledActivation(ScheduledRideActivated state) {
+    if (!mounted) return;
+    if (state.activeRide.id == _lastScheduledActivationRideId) return;
+    _lastScheduledActivationRideId = state.activeRide.id;
+
+    final riderId = state.activeRide.riderId.trim();
+    final pickup = state.activeRide.pickup;
+    if (riderId.isEmpty || pickup == null) return;
+
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider(
+          create: (_) => DriverTrackingCubit(
+            rideId: state.activeRide.id,
+            riderId: riderId,
+            pickup: pickup,
+          )..init(),
+          child: DriverTrackingScreen(rideId: state.activeRide.id),
+        ),
+      ),
+      (route) => route.isFirst,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.value(
-      value: _sessionCubit,
-      child: BlocListener<CustomerRideSessionCubit, CustomerRideSessionState>(
-        listener: (context, state) {
-          _navigateForSessionState(state);
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider.value(value: _sessionCubit),
+        BlocProvider.value(value: _scheduledRidesCubit),
+      ],
+      child: MultiBlocListener(
+        listeners: [
+          BlocListener<CustomerRideSessionCubit, CustomerRideSessionState>(
+            listener: (context, state) {
+              _navigateForSessionState(state);
 
-          if (state is CustomerRideSessionFailure) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(state.message)),
-            );
-          }
-        },
+              if (state is CustomerRideSessionFailure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(state.message)),
+                );
+              }
+            },
+          ),
+          BlocListener<ScheduledRidesCubit, ScheduledRidesState>(
+            listener: (context, state) {
+              if (state is ScheduledRideActivated) {
+                _navigateForScheduledActivation(state);
+              }
+            },
+          ),
+        ],
         child: Scaffold(
           appBar: AppBar(
             centerTitle: true,
             title: const Text("ZUBURB RIDE", style: TextStyle(letterSpacing: 6)),
-            actions: [
-              TextButton(
-                onPressed: () => context.read<AuthStatusCubit>().signOut(),
-                child: const Text("Logout"),
-              )
-            ],
+          ),
+          drawer: Drawer(
+            child: SafeArea(
+              child: Column(
+                children: [
+                  const DrawerHeader(
+                    child: Align(
+                      alignment: Alignment.bottomLeft,
+                      child: Text(
+                        'Menu',
+                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  ListTile(
+                    leading: BlocBuilder<ScheduledRidesCubit, ScheduledRidesState>(
+                      builder: (context, state) {
+                        var upcomingCount = 0;
+                        if (state is ScheduledRidesLoaded) {
+                          upcomingCount = state.upcoming.length;
+                        }
+
+                        final icon = const Icon(Icons.event_note);
+                        if (upcomingCount <= 0) return icon;
+
+                        return Badge(
+                          label: Text('$upcomingCount'),
+                          child: icon,
+                        );
+                      },
+                    ),
+                    title: const Text('Scheduled Rides'),
+                    onTap: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider.value(
+                            value: _scheduledRidesCubit,
+                            child: const ScheduledRidesScreen(),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const Spacer(),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.logout, color: Colors.red),
+                    title: const Text('Logout', style: TextStyle(color: Colors.red)),
+                    onTap: () {
+                      Navigator.pop(context);
+                      context.read<AuthStatusCubit>().signOut();
+                    },
+                  ),
+                ],
+              ),
+            ),
           ),
           body: Center(
             child: ElevatedButton(

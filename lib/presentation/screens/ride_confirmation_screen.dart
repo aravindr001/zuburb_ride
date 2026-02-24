@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:zuburb_ride/bloc/ride/ride_confirmation_cubit.dart';
 import 'package:zuburb_ride/bloc/ride/ride_confirmation_state.dart';
-import 'package:zuburb_ride/presentation/screens/finding_driver_screen.dart';
-import 'package:zuburb_ride/bloc/ride/finding_driver_cubit.dart';
+import 'package:zuburb_ride/bloc/ride/schedule_pickup_cubit.dart';
+import 'package:zuburb_ride/presentation/screens/schedule_pickup_screen.dart';
 
 class RideConfirmationScreen extends StatelessWidget {
   final LatLng pickup;
@@ -19,38 +19,8 @@ class RideConfirmationScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<RideConfirmationCubit, RideConfirmationState>(
-      listener: (context, state) {
-        if (state is RideConfirmationBooked) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Ride booked')),
-          );
-
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => BlocProvider(
-                create: (_) => FindingDriverCubit(rideId: state.rideId)..init(),
-                child: FindingDriverScreen(rideId: state.rideId),
-              ),
-            ),
-          );
-        }
-
-        if (state is RideConfirmationNoRiders) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No riders available')),
-          );
-        }
-
-        if (state is RideConfirmationFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.message)),
-          );
-        }
-      },
+      listener: (context, state) {},
       builder: (context, state) {
-        final isSubmitting = state is RideConfirmationSubmitting;
-
         return Scaffold(
           appBar: AppBar(title: const Text('Confirm Ride')),
           body: Padding(
@@ -79,9 +49,24 @@ class RideConfirmationScreen extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: isSubmitting
-                        ? null
-                        : () => context.read<RideConfirmationCubit>().confirmRide(),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => BlocProvider(
+                            create: (_) => SchedulePickupCubit(
+                              pickup: pickup,
+                              drop: drop,
+                              distanceKm: state.distanceKm,
+                            )..init(),
+                            child: SchedulePickupScreen(
+                              pickup: pickup,
+                              drop: drop,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                     child: const Text('Confirm Ride'),
                   ),
                 ),

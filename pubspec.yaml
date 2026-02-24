@@ -43,6 +43,8 @@ dependencies:
   geolocator: ^14.0.2
   http: ^1.2.2
   dart_geohash: ^2.1.0
+  intl: ^0.20.2
+  flutter_local_notifications: ^17.2.3
 
 dev_dependencies:
   flutter_test:

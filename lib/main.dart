@@ -8,13 +8,19 @@ import 'package:zuburb_ride/presentation/screens/home_screen.dart';
 import 'package:zuburb_ride/presentation/screens/profile_screen.dart';
 import 'package:zuburb_ride/bloc/profile/profile_cubit.dart';
 import 'package:zuburb_ride/repository/auth_repository.dart';
+import 'package:zuburb_ride/repository/ride_repository.dart';
+import 'package:zuburb_ride/services/local_notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await LocalNotificationService.initialize();
   runApp(
-    RepositoryProvider(
-      create: (_) => AuthRepository(),
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider(create: (_) => AuthRepository()),
+        RepositoryProvider(create: (_) => RideRepository()),
+      ],
       child: MultiBlocProvider(
         providers: [
           BlocProvider(
